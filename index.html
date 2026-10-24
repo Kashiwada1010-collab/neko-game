@@ -1,0 +1,30 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ねこを落とすな！</title>
+<style>
+body{font-family:sans-serif;text-align:center;background:#bdeaff;color:#17324b;padding:20px}
+button{font-size:22px;padding:14px 25px;border:0;border-radius:14px;background:#2185ff;color:white;cursor:pointer}
+#cat{font-size:70px;margin:25px}
+</style>
+</head>
+<body>
+<h1>🐱 ねこを落とすな！</h1>
+<p>ボタンを押して、ねこを落とさずにスコアを伸ばそう！</p>
+<div id="cat">🐱</div>
+<h2>スコア：<span id="score">0</span></h2>
+<button onclick="play()">ねこを守る！</button>
+<script>
+let score=0;
+function play(){
+ score+=Math.floor(Math.random()*10)+1;
+ document.getElementById('score').textContent=score;
+ document.getElementById('cat').textContent=
+ ['🐱','😺','😸','😹'][Math.floor(Math.random()*4)];
+}
+</script>
+</body>
+</html>
