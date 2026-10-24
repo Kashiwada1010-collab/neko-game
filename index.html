@@ -7,87 +7,170 @@
 <title>ねこを落とすな！</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;text-align:center;font-family:sans-serif;background:#dff5ff;color:#18314b}
-header{background:#18314b;color:white;padding:18px;font-size:22px;font-weight:bold}
-h1{font-size:clamp(36px,8vw,60px);color:#1685ff}
-main{max-width:750px;margin:auto;padding:16px}
-canvas{width:100%;height:auto;background:#a6e4ff;border:4px solid white;border-radius:18px;touch-action:none}
-button{border:0;border-radius:14px;padding:14px 22px;margin:6px;font-size:18px;font-weight:bold;cursor:pointer;background:#1685ff;color:white}
-#left,#right{background:#18314b;width:110px}
-.panel{background:white;padding:18px;border-radius:18px;margin:18px 0}
+body{margin:0;background:#17152b;color:white;font-family:system-ui,sans-serif;text-align:center;padding:20px}
+h1{color:#ffe082;font-size:clamp(25px,6vw,40px);margin:10px 0}
+p{color:#d9d6f3}
+.game{max-width:480px;margin:20px auto;background:#242141;border:2px solid #625b91;border-radius:22px;padding:16px}
+.stats{display:flex;justify-content:space-around;font-size:20px;font-weight:bold;margin:10px}
+#arena{height:340px;max-width:360px;margin:15px auto;background:linear-gradient(#a6e5ff,#edfbff);border-radius:16px;position:relative;overflow:hidden;border-bottom:12px solid #7cbd65}
+#cat{position:absolute;bottom:8px;left:calc(50% - 24px);font-size:42px;transition:left .08s;z-index:2}
+.block{position:absolute;top:-45px;font-size:30px}
+button{border:0;border-radius:14px;padding:13px 20px;font-size:18px;font-weight:bold;cursor:pointer}
+#start{background:#ffe082;color:#28203f;width:90%;margin:8px}
+.controls{display:flex;justify-content:center;gap:24px;margin:10px}
+.controls button{background:#8175d9;color:white;width:100px;font-size:26px;touch-action:manipulation}
+#share{background:#fff;color:#17152b;margin:8px}
+#message{min-height:28px;color:#ffe082;font-weight:bold}
+small{color:#c8c4e8}
 </style>
 </head>
 <body>
-<header>🐱 ゆるねこゲームズ</header>
-<main>
-<h1>ねこを落とすな！</h1>
-<p>落ちてくるブロックをよけて、ハイスコアを目指そう！</p>
-<button onclick="start()">▶ ゲームスタート</button>
-<div class="panel">
-<canvas id="game" width="600" height="400"></canvas>
-<h2>スコア：<span id="score">0</span></h2>
-<h3>自己ベスト：<span id="best">0</span></h3>
-<button id="left">◀ 左</button>
-<button id="right">右 ▶</button>
-<p>パソコン：← → キー ／ スマホ：左右ボタン</p>
+<h1>🐱 ねこを落とすな！</h1>
+<p>左右に動いて、落ちてくるブロックをよけよう！</p>
+
+<div class="game">
+  <div class="stats">
+    <span>⭐ スコア <span id="score">0</span></span>
+    <span>🏆 ベスト <span id="best">0</span></span>
+  </div>
+  <div id="arena">
+    <div id="cat">🐱</div>
+  </div>
+  <div id="message">スタートを押してね！</div>
+  <button id="start">▶ ゲームスタート</button>
+  <div class="controls">
+    <button id="left" aria-label="左へ">⬅️</button>
+    <button id="right" aria-label="右へ">➡️</button>
+  </div>
+  <small>キーボードの ← → でも操作できるよ</small>
+  <br>
+  <button id="share">𝕏 スコアをシェア</button>
 </div>
-<div class="panel">
-<h2>🎮 遊び方</h2>
-<p>猫を左右に動かして、落ちてくるブロックを避けよう！</p>
-<p>ぶつかったらゲームオーバー。何点取れるかな？</p>
-<button onclick="share()">𝕏 スコアをシェア</button>
-</div>
-</main>
+
 <script>
-const c=document.getElementById("game"),ctx=c.getContext("2d");
-let x=300,blocks=[],score=0,best=0,playing=false,keys={},frame=0;
-try{best=Number(localStorage.getItem("catBest")||0)}catch(e){}
-document.getElementById("best").textContent=best;
-function draw(){
- ctx.clearRect(0,0,600,400);
- ctx.fillStyle="#a6e4ff";ctx.fillRect(0,0,600,400);
- ctx.fillStyle="#fff";
- for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(i*160+50,60,20,0,7);ctx.arc(i*160+75,55,27,0,7);ctx.fill()}
- ctx.fillStyle="#18314b";
- blocks.forEach(b=>ctx.fillRect(b.x,b.y,b.s,b.s));
- ctx.fillStyle="#fff";ctx.strokeStyle="#18314b";ctx.lineWidth=4;
- ctx.beginPath();ctx.moveTo(x-25,300);ctx.lineTo(x-23,275);ctx.lineTo(x-8,285);ctx.lineTo(x+8,285);ctx.lineTo(x+23,275);ctx.lineTo(x+25,300);ctx.quadraticCurveTo(x+25,325,x,325);ctx.quadraticCurveTo(x-25,325,x-25,300);ctx.fill();ctx.stroke();
- ctx.fillStyle="#18314b";ctx.beginPath();ctx.arc(x-9,298,3,0,7);ctx.arc(x+9,298,3,0,7);ctx.fill();
- if(!playing){ctx.fillStyle="#18314bdd";ctx.fillRect(0,0,600,400);ctx.fillStyle="white";ctx.textAlign="center";ctx.font="bold 30px sans-serif";ctx.fillText(score?"ゲームオーバー！":"スタートを押してね",300,180);ctx.font="22px sans-serif";ctx.fillText(score?"スコア："+score:"ねこを守ろう！",300,220)}
+const arena = document.getElementById('arena');
+const cat = document.getElementById('cat');
+const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const message = document.getElementById('message');
+const startBtn = document.getElementById('start');
+
+let x = 0.5;
+let score = 0;
+let best = 0;
+let playing = false;
+let blocks = [];
+let lastTime = 0;
+let spawnTime = 0;
+let animation = 0;
+
+try {
+  best = Number(localStorage.getItem('nekoBest')) || 0;
+} catch(e) {}
+bestEl.textContent = best;
+
+function placeCat() {
+  const max = arena.clientWidth - cat.offsetWidth;
+  cat.style.left = Math.max(0, Math.min(max, x * max)) + 'px';
 }
-function loop(){
- if(!playing)return;
- frame++;score+=0.08;
- document.getElementById("score").textContent=Math.floor(score);
- if(keys.ArrowLeft||keys.a)x-=6;
- if(keys.ArrowRight||keys.d)x+=6;
- x=Math.max(25,Math.min(575,x));
- if(frame%38===0)blocks.push({x:Math.random()*560,y:-25,s:20+Math.random()*18});
- blocks.forEach(b=>b.y+=3+score/200);
- for(const b of blocks){
- if(x+20>b.x&&x-20<b.x+b.s&&310>b.y&&285<b.y+b.s){
- playing=false;best=Math.max(best,Math.floor(score));
- document.getElementById("best").textContent=best;
- try{localStorage.setItem("catBest",best)}catch(e){}
- draw();return;
- }}
- blocks=blocks.filter(b=>b.y<420);
- draw();requestAnimationFrame(loop);
+
+function moveCat(direction) {
+  if (!playing) return;
+  x = Math.max(0, Math.min(1, x + direction * 0.09));
+  placeCat();
 }
-function start(){x=300;blocks=[];score=0;frame=0;playing=true;draw();loop()}
-document.addEventListener("keydown",e=>keys[e.key]=true);
-document.addEventListener("keyup",e=>keys[e.key]=false);
-function hold(id,key){
- const b=document.getElementById(id);
- b.onpointerdown=e=>{e.preventDefault();keys[key]=true};
- ["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev,()=>keys[key]=false));
+
+document.getElementById('left').addEventListener('click', () => moveCat(-1));
+document.getElementById('right').addEventListener('click', () => moveCat(1));
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') { e.preventDefault(); moveCat(-1); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); moveCat(1); }
+  if (e.code === 'Space' && !playing) startGame();
+});
+
+function startGame() {
+  cancelAnimationFrame(animation);
+  blocks.forEach(b => b.el.remove());
+  blocks = [];
+  x = 0.5;
+  score = 0;
+  lastTime = 0;
+  spawnTime = 0;
+  playing = true;
+  scoreEl.textContent = '0';
+  message.textContent = 'ブロックをよけよう！';
+  startBtn.textContent = '↻ もう一度';
+  placeCat();
+  animation = requestAnimationFrame(loop);
 }
-hold("left","ArrowLeft");hold("right","ArrowRight");
-function share(){
- const msg="ねこを落とすな！で"+best+"点を記録！君は超えられる？";
- window.open("https://twitter.com/intent/tweet?text="+encodeURIComponent(msg+" "+location.href),"_blank");
+
+function endGame() {
+  playing = false;
+  message.textContent = 'ゲームオーバー！ スコア：' + score;
+  startBtn.textContent = '↻ もう一度遊ぶ';
+  if (score > best) {
+    best = score;
+    bestEl.textContent = best;
+    try { localStorage.setItem('nekoBest', best); } catch(e) {}
+    message.textContent = '🎉 ベスト更新！ スコア：' + score;
+  }
 }
-draw();
+
+function loop(time) {
+  if (!playing) return;
+  const dt = Math.min(time - (lastTime || time), 40);
+  lastTime = time;
+  spawnTime += dt;
+
+  if (spawnTime > Math.max(330, 850 - score * 5)) {
+    spawnTime = 0;
+    const el = document.createElement('div');
+    el.className = 'block';
+    el.textContent = Math.random() < 0.5 ? '🪨' : '📦';
+    const bx = Math.random() * (arena.clientWidth - 34);
+    el.style.left = bx + 'px';
+    arena.appendChild(el);
+    blocks.push({el, x: bx, y: -40});
+  }
+
+  const catRect = cat.getBoundingClientRect();
+  for (let i = blocks.length - 1; i >= 0; i--) {
+    const b = blocks[i];
+    b.y += dt * (0.19 + score * 0.002);
+    b.el.style.top = b.y + 'px';
+
+    const r = b.el.getBoundingClientRect();
+    if (r.bottom > catRect.top + 10 &&
+        r.top < catRect.bottom &&
+        r.right > catRect.left + 8 &&
+        r.left < catRect.right - 8) {
+      endGame();
+      return;
+    }
+
+    if (b.y > arena.clientHeight) {
+      b.el.remove();
+      blocks.splice(i, 1);
+      score++;
+      scoreEl.textContent = score;
+    }
+  }
+  animation = requestAnimationFrame(loop);
+}
+
+startBtn.addEventListener('click', startGame);
+
+document.getElementById('share').addEventListener('click', () => {
+  const text = '🐱 ねこを落とすな！でスコア ' + score +
+    ' 点！\n君は何点とれる？';
+  const url = 'https://kashiwada1010-collab.github.io/neko-game/';
+  window.open('https://twitter.com/intent/tweet?text=' +
+    encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank');
+});
+
+window.addEventListener('resize', placeCat);
+placeCat();
 </script>
 </body>
 </html>
